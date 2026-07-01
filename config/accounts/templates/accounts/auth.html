@@ -1,0 +1,529 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if initial_mode == "signup" %}Sign Up - NexusAuth{% else %}Sign In - NexusAuth{% endif %}</title>
+    <!-- Google Font for ultra-premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'accounts/css/auth.css' %}">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body class="dark-theme">
+
+    <!-- Interactive Canvas & Glowing Orbs Background -->
+    <canvas id="starfield"></canvas>
+    <div class="orb-container">
+        <div class="orb orb-purple" id="orbPurple"></div>
+        <div class="orb orb-cyan" id="orbCyan"></div>
+        <div class="orb orb-blue" id="orbBlue"></div>
+    </div>
+
+    <!-- Main Auth Card -->
+    <div class="auth-card-container">
+        <div class="auth-card">
+            
+            <!-- Brand Identity -->
+            <div class="brand-header">
+                <div class="brand-logo">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 12L12 22L22 12L12 2Z" stroke="url(#logo-grad)" stroke-width="2" stroke-linejoin="round"/>
+                        <path d="M12 6L6 12L12 18L18 12L12 6Z" fill="url(#logo-grad-fill)"/>
+                        <defs>
+                            <linearGradient id="logo-grad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#6366f1"/>
+                                <stop offset="1" stop-color="#d946ef"/>
+                            </linearGradient>
+                            <linearGradient id="logo-grad-fill" x1="6" y1="6" x2="18" y2="18" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#818cf8" stop-opacity="0.7"/>
+                                <stop offset="1" stop-color="#e879f9" stop-opacity="0.7"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <h2>GoogleAuth</h2>
+                <p class="brand-slogan">Next-generation secure access portal</p>
+            </div>
+
+            <!-- Custom Sliding Switcher -->
+            <div class="auth-tabs">
+                <div class="tab-slider" id="tabSlider"></div>
+                <button class="tab-btn" id="loginTabBtn" onclick="switchMode('login')">Sign In</button>
+                <button class="tab-btn" id="signupTabBtn" onclick="switchMode('signup')">Create Account</button>
+            </div>
+
+            <!-- Form Viewport -->
+            <div class="form-viewport">
+                <div class="forms-wrapper" id="formsWrapper">
+                    
+                    <!-- Login Form -->
+                    <form id="loginForm" class="auth-form" novalidate>
+                        {% csrf_token %}
+                        <div class="form-title-area">
+                            <h3>Welcome back</h3>
+                            <p class="subtitle">Enter your credentials to continue</p>
+                        </div>
+                        
+                        <div class="alert alert-error" id="loginFormError"></div>
+                        <div class="alert alert-success" id="loginFormSuccess"></div>
+
+                        <div class="field">
+                            <input type="text" id="login_username" name="username" placeholder=" " required autocomplete="username">
+                            <label for="login_username">Username</label>
+                            <div class="field-border"></div>
+                            <div class="error-msg" id="login_usernameError"></div>
+                        </div>
+
+                        <div class="field">
+                            <input type="password" id="login_password" name="password" placeholder=" " required autocomplete="current-password">
+                            <label for="login_password">Password</label>
+                            <div class="field-border"></div>
+                            <div class="error-msg" id="login_passwordError"></div>
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="loginSubmitBtn">
+                            <span class="btn-text">Sign In</span>
+                            <div class="btn-loader"></div>
+                            <div class="btn-shine"></div>
+                        </button>
+
+                        <div class="divider">or continue with</div>
+
+                        <!-- Google Sign-In Container -->
+                        <div class="google-signin-container">
+                            <div id="g_id_onload"
+                                 data-client_id="{{ google_client_id }}"
+                                 data-callback="handleGoogleLogin">
+                            </div>
+                            <div class="g_id_signin" 
+                                 data-type="standard" 
+                                 data-size="large" 
+                                 data-theme="filled_black" 
+                                 data-text="continue_with" 
+                                 data-shape="rectangular" 
+                                 data-logo_alignment="left"
+                                 data-width="100%">
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Signup Form -->
+                    <form id="signupForm" class="auth-form" novalidate>
+                        {% csrf_token %}
+                        <div class="form-title-area">
+                            <h3>Join GoogleAuth</h3>
+                            <p class="subtitle">Register a secure identity to get started</p>
+                        </div>
+
+                        <div class="alert alert-error" id="signupFormError"></div>
+
+                        <div class="field">
+                            <input type="text" id="signup_username" name="username" placeholder=" " required autocomplete="username">
+                            <label for="signup_username">Username</label>
+                            <div class="field-border"></div>
+                            <div class="error-msg" id="signup_usernameError"></div>
+                        </div>
+
+                        <div class="field">
+                            <input type="email" id="signup_email" name="email" placeholder=" " required autocomplete="email">
+                            <label for="signup_email">Email Address</label>
+                            <div class="field-border"></div>
+                            <div class="error-msg" id="signup_emailError"></div>
+                        </div>
+
+                        <div class="field">
+                            <input type="password" id="signup_password" name="password" placeholder=" " required autocomplete="new-password">
+                            <label for="signup_password">Password</label>
+                            <div class="field-border"></div>
+                            <div class="error-msg" id="signup_passwordError"></div>
+                        </div>
+
+                        <button type="submit" class="btn-primary" id="signupSubmitBtn">
+                            <span class="btn-text">Create Account</span>
+                            <div class="btn-loader"></div>
+                            <div class="btn-shine"></div>
+                        </button>
+                    </form>
+
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+        Made with <span class="heart">❤️</span> by <span class="google-text">Sukhman Singh</span>
+    </footer>
+
+    <!-- Script logic -->
+    <script>
+        // State variables
+        let currentMode = "{{ initial_mode|default:'login' }}";
+
+        // Cookie getter for CSRF token
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        // Initialize state on load
+        window.addEventListener('DOMContentLoaded', () => {
+            switchMode(currentMode, false);
+            initStars();
+            initMouseOrbs();
+        });
+
+        // Switch login/signup view
+        function switchMode(mode, animate = true) {
+            currentMode = mode;
+            const formsWrapper = document.getElementById('formsWrapper');
+            const tabSlider = document.getElementById('tabSlider');
+            const loginTabBtn = document.getElementById('loginTabBtn');
+            const signupTabBtn = document.getElementById('signupTabBtn');
+
+            // Apply sliding animations and active states
+            if (mode === 'login') {
+                formsWrapper.style.transform = 'translateX(0%)';
+                tabSlider.style.left = '4px';
+                tabSlider.style.width = 'calc(50% - 6px)';
+                loginTabBtn.classList.add('active');
+                signupTabBtn.classList.remove('active');
+                document.title = 'Sign In - NexusAuth';
+                if (animate) {
+                    history.pushState(null, '', '/accounts/login-page/');
+                }
+            } else {
+                formsWrapper.style.transform = 'translateX(-50%)';
+                tabSlider.style.left = 'calc(50% + 2px)';
+                tabSlider.style.width = 'calc(50% - 6px)';
+                signupTabBtn.classList.add('active');
+                loginTabBtn.classList.remove('active');
+                document.title = 'Sign Up - NexusAuth';
+                if (animate) {
+                    history.pushState(null, '', '/accounts/signup-page/');
+                }
+            }
+            clearErrors();
+        }
+
+        // Clear all form validation indicators and errors
+        function clearErrors() {
+            document.querySelectorAll('.error-msg').forEach(el => { 
+                el.classList.remove('show'); 
+                el.innerText = ''; 
+            });
+            document.querySelectorAll('input').forEach(el => {
+                el.classList.remove('error');
+            });
+            document.querySelectorAll('.alert').forEach(el => {
+                el.classList.remove('show');
+                el.innerText = '';
+            });
+        }
+
+        // Display field-specific error messages
+        function showFieldError(fieldId, message) {
+            const input = document.getElementById(fieldId);
+            const errorEl = document.getElementById(fieldId + 'Error');
+            if (input) input.classList.add('error');
+            if (errorEl) { 
+                errorEl.innerText = message; 
+                errorEl.classList.add('show'); 
+            }
+        }
+
+        // Successful authentication callback
+        function authSuccess(data, loginMethod = 'manual') {
+            localStorage.setItem('access_token', data.access);
+            localStorage.setItem('refresh_token', data.refresh);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            localStorage.setItem('login_method', loginMethod);
+            
+            // Premium redirect fadeout effect
+            document.body.classList.add('fade-out');
+            setTimeout(() => {
+                window.location.href = '/accounts/success/';
+            }, 600);
+        }
+
+        // Login form submission handler
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            clearErrors();
+
+            const btn = document.getElementById('loginSubmitBtn');
+            btn.classList.add('loading');
+
+            const payload = {
+                username: document.getElementById('login_username').value.trim(),
+                password: document.getElementById('login_password').value,
+            };
+
+            fetch('/accounts/login/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify(payload),
+            })
+            .then(res => res.json().then(data => ({ status: res.status, data })))
+            .then(({ status, data }) => {
+                btn.classList.remove('loading');
+
+                if (status === 200) {
+                    authSuccess(data, 'manual');
+                } else {
+                    const formError = document.getElementById('loginFormError');
+                    formError.innerText = data.non_field_errors ? data.non_field_errors[0] : (data.detail || 'Invalid username or password.');
+                    formError.classList.add('show');
+                }
+            })
+            .catch(() => {
+                btn.classList.remove('loading');
+                const formError = document.getElementById('loginFormError');
+                formError.innerText = 'Network connection failed. Please try again.';
+                formError.classList.add('show');
+            });
+        });
+
+        // Signup form submission handler
+        document.getElementById('signupForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            clearErrors();
+
+            const btn = document.getElementById('signupSubmitBtn');
+            btn.classList.add('loading');
+
+            const payload = {
+                username: document.getElementById('signup_username').value.trim(),
+                email: document.getElementById('signup_email').value.trim(),
+                password: document.getElementById('signup_password').value,
+            };
+
+            fetch('/accounts/signup/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify(payload),
+            })
+            .then(res => res.json().then(data => ({ status: res.status, data })))
+            .then(({ status, data }) => {
+                btn.classList.remove('loading');
+
+                if (status === 201) {
+                    const registeredUsername = payload.username;
+                    // Switch to login mode
+                    switchMode('login');
+                    // Pre-fill registered username
+                    document.getElementById('login_username').value = registeredUsername;
+                    // Clear password field
+                    document.getElementById('login_password').value = '';
+                    
+                    // Show success message on the login card
+                    const successAlert = document.getElementById('loginFormSuccess');
+                    successAlert.innerText = `${registeredUsername} successfully registered! Now back to sign in.`;
+                    successAlert.classList.add('show');
+                    
+                    // Clear the signup form fields
+                    document.getElementById('signup_username').value = '';
+                    document.getElementById('signup_email').value = '';
+                    document.getElementById('signup_password').value = '';
+                } else {
+                    let handled = false;
+                    ['username', 'email', 'password'].forEach(field => {
+                        if (data[field]) {
+                            showFieldError('signup_' + field, Array.isArray(data[field]) ? data[field][0] : data[field]);
+                            handled = true;
+                        }
+                    });
+                    if (!handled) {
+                        const formError = document.getElementById('signupFormError');
+                        formError.innerText = data.detail || 'Registration failed. Check details.';
+                        formError.classList.add('show');
+                    }
+                }
+            })
+            .catch(() => {
+                btn.classList.remove('loading');
+                const formError = document.getElementById('signupFormError');
+                formError.innerText = 'Network connection failed. Please try again.';
+                formError.classList.add('show');
+            });
+        });
+
+        // Google Authentication handler
+        function handleGoogleLogin(response) {
+            console.log("Google Sign-In response received from library:", response);
+            const formError = document.getElementById('loginFormError');
+            formError.classList.remove('show');
+            
+            if (!response.credential) {
+                console.error("No credential token returned from Google Sign-In.");
+                formError.innerText = "No credential returned from Google Sign-In.";
+                formError.classList.add('show');
+                return;
+            }
+
+            fetch('/accounts/google-login/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({ id_token: response.credential }),
+            })
+            .then(res => {
+                console.log("Response status from server:", res.status);
+                return res.json().then(data => ({ status: res.status, data }));
+            })
+            .then(({ status, data }) => {
+                console.log("Response data from server:", data);
+                if (status === 200 && data.access) {
+                    console.log("Login successful! Redirecting...");
+                    authSuccess(data, 'google');
+                } else {
+                    console.error("Login verification failed on backend:", data);
+                    formError.innerText = data.error || data.detail || 'Google sign-in failed. Please try again.';
+                    formError.classList.add('show');
+                }
+            })
+            .catch((err) => {
+                console.error("Network or Javascript exception during fetch:", err);
+                formError.innerText = 'Network connection failed during Google Sign-In.';
+                formError.classList.add('show');
+            });
+        }
+
+        // ================= BACKGROUND ANIMATIONS =================
+        
+        // 1. Starfield Particles Canvas Animation
+        function initStars() {
+            const canvas = document.getElementById('starfield');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            const particleCount = 60;
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+                reset() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 1.5 + 0.5;
+                    this.speedX = (Math.random() - 0.5) * 0.15;
+                    this.speedY = (Math.random() - 0.5) * 0.15;
+                    this.alpha = Math.random() * 0.5 + 0.1;
+                    this.fadeSpeed = Math.random() * 0.005 + 0.002;
+                    this.color = Math.random() > 0.5 ? '147, 51, 234' : '99, 102, 241'; // Indigo or Purple
+                }
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    
+                    // Bounce borders
+                    if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                    if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+
+                    // Breathe effect
+                    this.alpha += this.fadeSpeed;
+                    if (this.alpha > 0.75 || this.alpha < 0.15) {
+                        this.fadeSpeed *= -1;
+                    }
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+                    ctx.fill();
+                }
+            }
+
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw connecting web lines if close enough
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            const lineAlpha = (1 - (dist / 100)) * 0.08;
+                            ctx.strokeStyle = `rgba(139, 92, 246, ${lineAlpha})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // 2. Interactive Mouse-following Glowing Orbs (with lag/spring physics)
+        function initMouseOrbs() {
+            const orbP = document.getElementById('orbPurple');
+            const orbC = document.getElementById('orbCyan');
+            const orbB = document.getElementById('orbBlue');
+
+            let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+            
+            // Handle mouse movements
+            window.addEventListener('mousemove', (e) => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+
+            // Physics spring parameters for each orb (lower speed/higher spring is slower lag)
+            const orbs = [
+                { el: orbP, x: 100, y: 100, targetX: 100, targetY: 100, ease: 0.04, offset: { x: -120, y: -80 } },
+                { el: orbC, x: 200, y: 300, targetX: 200, targetY: 300, ease: 0.03, offset: { x: 120, y: 100 } },
+                { el: orbB, x: 300, y: 200, targetX: 300, targetY: 200, ease: 0.02, offset: { x: 0, y: -150 } }
+            ];
+
+            function updatePhysics() {
+                orbs.forEach((orb) => {
+                    // Update targets towards mouse with offset
+                    orb.targetX = mouse.x + orb.offset.x;
+                    orb.targetY = mouse.y + orb.offset.y;
+
+                    // Interpolate position (spring effect)
+                    orb.x += (orb.targetX - orb.x) * orb.ease;
+                    orb.y += (orb.targetY - orb.y) * orb.ease;
+
+                    // Apply coordinates to elements
+                    orb.el.style.transform = `translate3d(${orb.x - 150}px, ${orb.y - 150}px, 0)`;
+                });
+                requestAnimationFrame(updatePhysics);
+            }
+            updatePhysics();
+        }
+    </script>
+</body>
+</html>

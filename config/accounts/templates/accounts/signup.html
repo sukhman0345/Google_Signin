@@ -1,0 +1,128 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Sign Up</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/auth.css' %}">
+</head>
+<body>
+
+<div class="auth-card">
+    <h1>Create your account</h1>
+    <p class="subtitle">Sign up to get started</p>
+
+    <div class="alert alert-error" id="formError"></div>
+
+    <form id="signupForm" novalidate>
+        {% csrf_token %}
+
+        <div class="field">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="e.g. rahul123">
+            <div class="error-msg" id="usernameError"></div>
+        </div>
+
+        <div class="field">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" placeholder="you@example.com">
+            <div class="error-msg" id="emailError"></div>
+        </div>
+
+        <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="At least 8 characters">
+            <div class="error-msg" id="passwordError"></div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="submitBtn">Create account</button>
+    </form>
+
+    <p class="footer-link">Already have an account? <a href="/accounts/login-page/">Log in</a></p>
+</div>
+
+<!-- Footer -->
+<footer class="page-footer">
+    Made with <span class="heart">❤️</span> by <span class="google-text">Sukhman Singh</span>
+</footer>
+
+<script>
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+function clearErrors() {
+    document.querySelectorAll('.error-msg').forEach(el => { el.classList.remove('show'); el.innerText = ''; });
+    document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
+    document.getElementById('formError').classList.remove('show');
+}
+
+function showFieldError(field, message) {
+    const input = document.getElementById(field);
+    const errorEl = document.getElementById(field + 'Error');
+    if (input) input.classList.add('error');
+    if (errorEl) { errorEl.innerText = message; errorEl.classList.add('show'); }
+}
+
+document.getElementById('signupForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    clearErrors();
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerText = 'Creating account...';
+
+    const payload = {
+        username: document.getElementById('username').value.trim(),
+        email: document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+    };
+
+    fetch('/accounts/signup/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify(payload),
+    })
+    .then(res => res.json().then(data => ({ status: res.status, data })))
+    .then(({ status, data }) => {
+        btn.disabled = false;
+        btn.innerText = 'Create account';
+
+        if (status === 201) {
+            localStorage.setItem('access_token', data.access);
+            localStorage.setItem('refresh_token', data.refresh);
+            localStorage.setItem('user', JSON.stringify(data.user));
+            window.location.href = '/accounts/success/';
+        } else {
+            // Map DRF field errors to inputs
+            let handled = false;
+            ['username', 'email', 'password'].forEach(field => {
+                if (data[field]) {
+                    showFieldError(field, Array.isArray(data[field]) ? data[field][0] : data[field]);
+                    handled = true;
+                }
+            });
+            if (!handled) {
+                const formError = document.getElementById('formError');
+                formError.innerText = data.detail || 'Something went wrong. Please try again.';
+                formError.classList.add('show');
+            }
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerText = 'Create account';
+        const formError = document.getElementById('formError');
+        formError.innerText = 'Network error. Please check your connection.';
+        formError.classList.add('show');
+    });
+});
+</script>
+
+</body>
+</html>

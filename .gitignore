@@ -1,0 +1,56 @@
+# Environment Variables & Confidential Files
+.env
+.env.local
+.env.*
+secrets.json
+*.key
+*.pem
+*.cert
+*.crt
+id_rsa*
+*.pfx
+
+# Python Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+pyvenv.cfg
+.python-version
+
+# Django & Local Settings
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+*.sqlite
+*.db
+
+# Python caching & artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# Logging
+*.log
+log.txt
+logs/
+
+# IDE / System files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+desktop.ini
+.agents/
+.gemini/

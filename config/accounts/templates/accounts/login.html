@@ -1,0 +1,141 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Log In</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/auth.css' %}">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<div class="auth-card">
+    <h1>Welcome back</h1>
+    <p class="subtitle">Log in to your account</p>
+
+    <div class="alert alert-error" id="formError"></div>
+
+    <form id="loginForm" novalidate>
+        {% csrf_token %}
+
+        <div class="field">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" placeholder="Your username">
+            <div class="error-msg" id="usernameError"></div>
+        </div>
+
+        <div class="field">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" placeholder="Your password">
+            <div class="error-msg" id="passwordError"></div>
+        </div>
+
+        <button type="submit" class="btn-primary" id="submitBtn">Log in</button>
+    </form>
+
+    <div class="divider">or</div>
+
+    <!-- Google Sign-In will be wired here once Client ID is set up -->
+    <div id="g_id_onload"
+         data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+         data-callback="handleGoogleLogin">
+    </div>
+    <div class="g_id_signin" data-type="standard" data-size="large" data-theme="outline" data-text="continue_with" data-shape="rectangular" data-width="328"></div>
+
+    <p class="footer-link">Don't have an account? <a href="/accounts/signup-page/">Sign up</a></p>
+</div>
+
+<!-- Footer -->
+<footer class="page-footer">
+    Made with <span class="heart">❤️</span> by <span class="google-text">Sukhman Singh</span>
+</footer>
+
+<script>
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+function clearErrors() {
+    document.querySelectorAll('.error-msg').forEach(el => { el.classList.remove('show'); el.innerText = ''; });
+    document.querySelectorAll('input').forEach(el => el.classList.remove('error'));
+    document.getElementById('formError').classList.remove('show');
+}
+
+function showFieldError(field, message) {
+    const input = document.getElementById(field);
+    const errorEl = document.getElementById(field + 'Error');
+    if (input) input.classList.add('error');
+    if (errorEl) { errorEl.innerText = message; errorEl.classList.add('show'); }
+}
+
+function loginSuccess(data) {
+    localStorage.setItem('access_token', data.access);
+    localStorage.setItem('refresh_token', data.refresh);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    window.location.href = '/accounts/success/';
+}
+
+document.getElementById('loginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    clearErrors();
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerText = 'Logging in...';
+
+    const payload = {
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value,
+    };
+
+    fetch('/accounts/login/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify(payload),
+    })
+    .then(res => res.json().then(data => ({ status: res.status, data })))
+    .then(({ status, data }) => {
+        btn.disabled = false;
+        btn.innerText = 'Log in';
+
+        if (status === 200) {
+            loginSuccess(data);
+        } else {
+            const formError = document.getElementById('formError');
+            formError.innerText = data.non_field_errors ? data.non_field_errors[0] : (data.detail || 'Invalid login.');
+            formError.classList.add('show');
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.innerText = 'Log in';
+        const formError = document.getElementById('formError');
+        formError.innerText = 'Network error. Please check your connection.';
+        formError.classList.add('show');
+    });
+});
+
+// Placeholder — will call /api/auth/google-login/ once Client ID/Secret are set up
+function handleGoogleLogin(response) {
+    fetch('/accounts/google-login/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({ id_token: response.credential }),
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.access) loginSuccess(data);
+    });
+}
+</script>
+
+</body>
+</html>

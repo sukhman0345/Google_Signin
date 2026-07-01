@@ -1,0 +1,272 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Success - NexusAuth</title>
+    <!-- Google Font for ultra-premium typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'accounts/css/auth.css' %}">
+</head>
+<body class="dark-theme">
+
+    <!-- Interactive Canvas & Glowing Orbs Background -->
+    <canvas id="starfield"></canvas>
+    <div class="orb-container">
+        <div class="orb orb-purple" id="orbPurple"></div>
+        <div class="orb orb-cyan" id="orbCyan"></div>
+        <div class="orb orb-blue" id="orbBlue"></div>
+    </div>
+
+    <!-- Success Dashboard Card -->
+    <div class="auth-card-container">
+        <div class="auth-card" style="text-align: center;">
+            
+            <!-- Brand Identity -->
+            <div class="brand-header">
+                <div class="brand-logo">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 12L12 22L22 12L12 2Z" stroke="url(#logo-grad)" stroke-width="2" stroke-linejoin="round"/>
+                        <path d="M12 6L6 12L12 18L18 12L12 6Z" fill="url(#logo-grad-fill)"/>
+                        <defs>
+                            <linearGradient id="logo-grad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#6366f1"/>
+                                <stop offset="1" stop-color="#d946ef"/>
+                            </linearGradient>
+                            <linearGradient id="logo-grad-fill" x1="6" y1="6" x2="18" y2="18" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#818cf8" stop-opacity="0.7"/>
+                                <stop offset="1" stop-color="#e879f9" stop-opacity="0.7"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <h2>GoogleAuth</h2>
+                <p class="brand-slogan">Secure Dashboard Session</p>
+            </div>
+
+            <!-- Success Content -->
+            <div class="success-icon-container" style="margin-top: 10px; margin-bottom: 16px;">
+                <div class="success-icon">
+                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3">
+                        <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+            
+            <div id="loginStatusBanner" class="alert alert-success" style="display: none; margin-bottom: 24px; text-align: center; font-size: 14px; padding: 12px;">
+                Signed in successfully with Google!
+            </div>
+            
+            <!-- User Profile Card -->
+            <div class="profile-card" style="margin-bottom: 32px; padding: 24px 20px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 20px; display: flex; flex-direction: column; align-items: center; gap: 16px;">
+                <div class="profile-avatar-container" style="position: relative; width: 90px; height: 90px; border-radius: 50%; padding: 3px; background: var(--primary-grad); box-shadow: 0 0 20px rgba(139, 92, 246, 0.25);">
+                    <img id="profilePic" src="" alt="Profile Picture" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #131024; display: none;">
+                    <div id="profileAvatarFallback" style="width: 100%; height: 100%; border-radius: 50%; background: #131024; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; color: #ffffff;">
+                        U
+                    </div>
+                </div>
+                
+                <div class="profile-info" style="text-align: center; width: 100%;">
+                    <h2 id="profileName" style="font-size: 20px; font-weight: 700; color: #ffffff; margin-bottom: 4px;">Username</h2>
+                    <p id="profileEmail" style="font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; word-break: break-all;">email@example.com</p>
+                    <div style="display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); font-size: 12.5px; font-weight: 600; color: var(--text-secondary);">
+                        <span id="providerDot" style="width: 8px; height: 8px; border-radius: 50%; background: var(--success);"></span>
+                        <span id="providerText">Nexus Credentials</span>
+                    </div>
+                </div>
+            </div>
+            
+            <button class="btn-primary" onclick="logout()">
+                <span class="btn-text">Sign Out Session</span>
+                <div class="btn-shine"></div>
+            </button>
+            
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="page-footer">
+        Made with <span class="heart">❤️</span> by <span class="google-text">Sukhman Singh</span>
+    </footer>
+
+    <script>
+        const userData = localStorage.getItem('user');
+        const loginMethod = localStorage.getItem('login_method');
+
+        if (!userData) {
+            window.location.href = '/accounts/login-page/';
+        } else {
+            const user = JSON.parse(userData);
+            
+            // Populate Name & Email
+            document.getElementById('profileName').innerText = user.username || 'User';
+            document.getElementById('profileEmail').innerText = user.email || 'No email associated';
+            
+            // Populate Profile Picture
+            const imgEl = document.getElementById('profilePic');
+            const fallbackEl = document.getElementById('profileAvatarFallback');
+            if (user.profile_picture) {
+                imgEl.src = user.profile_picture;
+                imgEl.style.display = 'block';
+                fallbackEl.style.display = 'none';
+            } else {
+                imgEl.style.display = 'none';
+                fallbackEl.style.display = 'flex';
+                fallbackEl.innerText = user.username ? user.username.charAt(0).toUpperCase() : 'U';
+            }
+            
+            // Populate Login Method Banner & Status Badge
+            const statusBanner = document.getElementById('loginStatusBanner');
+            const providerDot = document.getElementById('providerDot');
+            const providerText = document.getElementById('providerText');
+            
+            if (loginMethod === 'google') {
+                statusBanner.innerText = 'Signed in successfully with Google!';
+                statusBanner.style.display = 'block';
+                providerDot.style.background = '#4285F4'; // Google blue
+                providerText.innerText = 'Google Account';
+            } else {
+                statusBanner.innerText = 'Successfully signed in!';
+                statusBanner.style.display = 'block';
+                providerDot.style.background = 'var(--success)';
+                providerText.innerText = 'Nexus Credentials';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            
+            // Fade-out transition
+            document.body.classList.add('fade-out');
+            setTimeout(() => {
+                window.location.href = '/accounts/login-page/';
+            }, 600);
+        }
+
+        // ================= BACKGROUND ANIMATIONS =================
+        
+        // 1. Starfield Particles Canvas Animation
+        function initStars() {
+            const canvas = document.getElementById('starfield');
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            const particleCount = 60;
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas();
+
+            class Particle {
+                constructor() {
+                    this.reset();
+                }
+                reset() {
+                    this.x = Math.random() * canvas.width;
+                    this.y = Math.random() * canvas.height;
+                    this.size = Math.random() * 1.5 + 0.5;
+                    this.speedX = (Math.random() - 0.5) * 0.15;
+                    this.speedY = (Math.random() - 0.5) * 0.15;
+                    this.alpha = Math.random() * 0.5 + 0.1;
+                    this.fadeSpeed = Math.random() * 0.005 + 0.002;
+                    this.color = Math.random() > 0.5 ? '147, 51, 234' : '99, 102, 241'; // Indigo or Purple
+                }
+                update() {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                    
+                    if (this.x < 0 || this.x > canvas.width) this.speedX *= -1;
+                    if (this.y < 0 || this.y > canvas.height) this.speedY *= -1;
+
+                    this.alpha += this.fadeSpeed;
+                    if (this.alpha > 0.75 || this.alpha < 0.15) {
+                        this.fadeSpeed *= -1;
+                    }
+                }
+                draw() {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+                    ctx.fill();
+                }
+            }
+
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                for (let i = 0; i < particles.length; i++) {
+                    particles[i].update();
+                    particles[i].draw();
+
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x;
+                        const dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(particles[i].x, particles[i].y);
+                            ctx.lineTo(particles[j].x, particles[j].y);
+                            const lineAlpha = (1 - (dist / 100)) * 0.08;
+                            ctx.strokeStyle = `rgba(139, 92, 246, ${lineAlpha})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        // 2. Interactive Mouse-following Glowing Orbs (with lag/spring physics)
+        function initMouseOrbs() {
+            const orbP = document.getElementById('orbPurple');
+            const orbC = document.getElementById('orbCyan');
+            const orbB = document.getElementById('orbBlue');
+
+            let mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+            
+            window.addEventListener('mousemove', (e) => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+
+            const orbs = [
+                { el: orbP, x: 100, y: 100, targetX: 100, targetY: 100, ease: 0.04, offset: { x: -120, y: -80 } },
+                { el: orbC, x: 200, y: 300, targetX: 200, targetY: 300, ease: 0.03, offset: { x: 120, y: 100 } },
+                { el: orbB, x: 300, y: 200, targetX: 300, targetY: 200, ease: 0.02, offset: { x: 0, y: -150 } }
+            ];
+
+            function updatePhysics() {
+                orbs.forEach((orb) => {
+                    orb.targetX = mouse.x + orb.offset.x;
+                    orb.targetY = mouse.y + orb.offset.y;
+
+                    orb.x += (orb.targetX - orb.x) * orb.ease;
+                    orb.y += (orb.targetY - orb.y) * orb.ease;
+
+                    orb.el.style.transform = `translate3d(${orb.x - 150}px, ${orb.y - 150}px, 0)`;
+                });
+                requestAnimationFrame(updatePhysics);
+            }
+            updatePhysics();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initStars();
+            initMouseOrbs();
+        });
+    </script>
+</body>
+</html>
